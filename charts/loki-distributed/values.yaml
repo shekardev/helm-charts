@@ -95,17 +95,25 @@ loki:
       configs:
         - from: 2020-09-07
           store: boltdb-shipper
-          object_store: filesystem
+          object_store: s3
           schema: v11
           index:
             prefix: loki_index_
             period: 24h
 
     storage_config:
+      aws:
+        
+        bucketnames: ${bucketname}
+        endpoint: s3.${region}.amazonaws.com
+        region: ${region}
+        access_key_id: ${accesskey}
+        secret_access_key: ${secretkey}
+        insecure: true
       boltdb_shipper:
-        shared_store: filesystem
+        shared_store: s3
         active_index_directory: /var/loki/index
-        cache_location: /var/loki/cache
+        cache_location: /var/loki/boltdp-cache
         cache_ttl: 168h
         {{- if .Values.indexGateway.enabled }}
         index_gateway_client:
@@ -142,7 +150,8 @@ loki:
       tail_proxy_url: http://{{ include "loki.querierFullname" . }}:3100
 
     compactor:
-      shared_store: filesystem
+      shared_store: s3
+      working_directory: /loki/compactor
 
     ruler:
       storage:
@@ -765,7 +774,7 @@ gateway:
 # Configuration for the compactor
 compactor:
   # -- Specifies whether compactor should be enabled
-  enabled: false
+  enabled: true
   image:
     # -- The Docker registry for the compactor image. Overrides `loki.image.registry`
     registry: null
